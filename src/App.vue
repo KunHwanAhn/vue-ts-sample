@@ -1,60 +1,61 @@
 <template>
-  <div id="app">
-    <img src="./assets/logo.png">
-    <h1>{{ msg }}</h1>
-    <h2>Essential Links</h2>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank">Twitter</a></li>
-    </ul>
-    <h2>Ecosystem</h2>
-    <ul>
-      <li><a href="http://router.vuejs.org/" target="_blank">vue-router</a></li>
-      <li><a href="http://vuex.vuejs.org/" target="_blank">vuex</a></li>
-      <li><a href="http://vue-loader.vuejs.org/" target="_blank">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank">awesome-vue</a></li>
-    </ul>
+  <div id="app" class="main-view">
+    <div class="nav-container">
+      <router-link class="nav-item" to="/myCroppa">
+        Croppa
+      </router-link>
+      <router-link class="nav-item" to="/helloWrold">
+        Hello World
+      </router-link>
+    </div>
+
+    <router-view></router-view>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue';
+import VueRouter from 'vue-router';
+import HelloWrold from './components/HelloWorld.vue';
+import MyCroppa from './components/MyCroppa.vue';
+
+Vue.use(VueRouter);
+
+const routes = [
+  {
+    path: '/helloWrold',
+    component: HelloWrold
+  },
+  {
+    path: '/myCroppa',
+    component: MyCroppa
+  }
+];
+
+const router = new VueRouter({ routes });
+
 export default {
   name: 'app',
-  data () {
-    return {
-      msg: 'Welcome to Your Vue.js App'
-    }
-  }
+  router
 }
 </script>
 
-<style lang="scss">
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+<style lang="scss" scoped>
+.main-view {
+  max-width: 1280px;
+  min-height: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
 }
 
-h1, h2 {
-  font-weight: normal;
-}
+.nav-container {
+  background-color: powderblue;
+  padding: 20px;
+  display: flex;
 
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-
-a {
-  color: #42b983;
+  .nav-item {
+    margin: 0 20px;
+  }
 }
 </style>

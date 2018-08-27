@@ -1,16 +1,13 @@
-import Vue from "vue";
-import HelloComponent from "./components/Hello.vue";
+import Vue from 'vue';
+import App from './App.vue';
+import VueRouter from 'vue-router';
+import VueRx from 'vue-rx';
 
-let v = new Vue({
-  el: "#app",
-  template: `
-    <div>
-        Name: <input v-model="name" type="text">
-        <hello-component :name="name" :initialEnthusiasm="5" />
-    </div>
-    `,
-  data: { name: "World" },
-  components: {
-    HelloComponent
-  }
+Vue.use(VueRouter);
+Vue.use(VueRx);
+
+new Vue({
+  el: '#app',
+  components: { App },
+  template: '<App/>'
 });
