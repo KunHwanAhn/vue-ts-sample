@@ -62,9 +62,6 @@ const INITIAL_IMAGE_SIZE = 'natural';
 const IMAGE_MAX_WIDTH = 150;
 const IMAGE_MAX_HEIGHT = 150;
 
-// https://frontendsociety.com/writing-single-file-components-vue-files-in-typescript-vue-class-component-vs-vue-extend-c5c1d8e47b7
-// https://github.com/orenhd/vue-typescript--rxjs
-
 function isClickEvent(mouseEvent) {
   return _.get(mouseEvent, 'event.type') === 'click'
 }

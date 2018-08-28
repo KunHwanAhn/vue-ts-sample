@@ -7,6 +7,9 @@
       <router-link class="nav-item" to="/helloWrold">
         Hello World
       </router-link>
+      <router-link class="nav-item" to="/typeComponent">
+        Type Component
+      </router-link>
     </div>
 
     <router-view></router-view>
@@ -18,6 +21,7 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import HelloWrold from './components/HelloWorld.vue';
 import MyCroppa from './components/MyCroppa.vue';
+import TypeComponent from './components/TypeComponent.vue';
 
 Vue.use(VueRouter);
 
@@ -29,15 +33,19 @@ const routes = [
   {
     path: '/myCroppa',
     component: MyCroppa
+  },
+  {
+    path: '/typeComponent',
+    component: TypeComponent
   }
 ];
 
 const router = new VueRouter({ routes });
 
-export default {
+export default Vue.extend({
   name: 'app',
   router
-}
+})
 </script>
 
 <style lang="scss" scoped>

@@ -1,10 +1,11 @@
 <template>
   <div class="main-container">
     <div class="hedaer">
-      {{ message }}
+      {{ title }}
     </div>
     <div class="button-group">
-      <button v-stream:click="plusButton">
+      <!-- <button v-stream:click="plusButton"> -->
+      <button @click="plusButton">
         Click Me!
       </button>
 
@@ -22,7 +23,8 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue';
 import { Observable, Subject } from 'rxjs';
 import 'rxjs/add/observable/interval';
 import 'rxjs/add/operator/take';
@@ -33,32 +35,37 @@ const childComponent = {
   template: '<div>{{ passedData }}</div>'
 }
 
-export default {
-  name: 'test',
+// https://github.com/orenhd/vue-typescript--rxjs
+// https://www.vuemastery.com/conferences/vueconf-2018/vue-rx-john-lindquist/
+
+export default Vue.extend({
   data() {
     return {
+      title: 'HelloWorld.vue',
+      messageToChild: 'Hello Vue! from Parent Component',
       clickCount: 0,
-      count: 0,
-      message: 'Hello world!!',
-      messageToChild: 'Hello Vue! from Parent Component'
-    }
+      count: 0
+    };
   },
   components: {
-      'child-component': childComponent
+    'child-component': childComponent
+  },
+  methods: {
+    plusButton(): void {
+      this.clickCount++;
+    }
   },
   subscriptions() {
-    this.plusButton = new Subject();
-
     return {
-      clickCount: this.plusButton.pipe(
-        map(() => true),
-        startWith(0),
-        scan((total, change) => total + change)
-      ),
+      // clickCount: this.plusButton.pipe(
+      //   map(() => true),
+      //   startWith(0),
+      //   scan((total, change) => total + change)
+      // ),
       count: Observable.interval(1000).take(10)
     }
   }
-}
+});
 </script>
 
 <style lang="scss" scoped>
