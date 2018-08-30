@@ -27,6 +27,10 @@ Vue.use(VueRouter);
 
 const routes = [
   {
+    path: '/',
+    redirect: 'myCroppa'
+  },
+  {
     path: '/helloWrold',
     component: HelloWrold
   },
