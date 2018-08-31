@@ -4,7 +4,7 @@
       {{ title }}
     </div>
     <div class="button-group">
-      <button id="plusButton">
+      <button id="plusButton" v-stream:click="plusButton">
         Click Me!
       </button>
 
@@ -24,7 +24,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import 'rxjs/add/observable/interval';
 import 'rxjs/add/operator/take';
 import { map, startWith, scan } from 'rxjs/operators';
@@ -38,7 +38,8 @@ export default Vue.extend({
   data() {
     return {
       title: 'HelloWorld.vue',
-      messageToChild: 'Hello Vue! from Parent Component'
+      messageToChild: 'Hello Vue! from Parent Component',
+      plusButton: new Subject()
     };
   },
   components: {
@@ -46,7 +47,7 @@ export default Vue.extend({
   },
   subscriptions() {
     return {
-      clickCount: this.$fromDOMEvent('#plusButton', 'click').pipe(
+      clickCount: this.$data.plusButton.pipe(
         map(() => true),
         startWith(0),
         scan((total:number, change:number): number => total + change)
