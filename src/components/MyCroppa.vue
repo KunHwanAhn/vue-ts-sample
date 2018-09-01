@@ -1,68 +1,80 @@
 <template>
   <div class="main-container">
-    <div class="image-limitation-noti-container"
-         :style="{ width: `${croppaOpts.width}px`}">
-      <span>
-        ({{ IMAGE_MAX_WIDTH }}px * {{ IMAGE_MAX_HEIGHT }}px / {{ croppaOpts.fileSizeLimit / 1024 / 1024 }}MB미만)
-      </span>
+    <div v-show="!accessToken"
+         class="google-access-container">
+      <a target="_blank" :href="codeUrl">Click to get Google OAuth2 code</a>
+      <div>
+        <label for="authorizationCode">Enter OAuth Code</label>
+        <input type="text" v-model="authorizationCode" name="authorizationCode">
+        <button  v-stream:click="exchangeAccessToken$">Get access token</button>
+      </div>
     </div>
 
-    <div class="my-croppa-container">
-      <croppa v-model="myCroppa"
-              :width="croppaOpts.width"
-              :height="croppaOpts.height"
-              :accept="croppaOpts.fileTypes"
-              :file-size-limit="croppaOpts.fileSizeLimit"
-              :remove-button-size="croppaOpts.removeButtonSize"
-              :initial-size="croppaOpts.initialImageSize"
-              :show-loading="croppaOpts.showLoading"
-              :disable-click-to-choose="croppaOpts.disableClickToChoose"
-              placeholder=""
-              @file-size-exceed="onFileSizeExceeded"
-              @new-image-drawn="onImageChosen"
-              @image-remove="onImageRemoved"
-              @zoom="onZoomed">
-      </croppa>
-    </div>
-
-    <div class="button-group-container">
-      <div v-show="!isImageUploaded"
-           class="button-group">
-        <button v-stream:click="chooseTarget$">
-          Choose Image
-        </button>
+    <div v-show="accessToken"
+         class="image-uploader-container">
+      <div class="image-limitation-noti-container"
+          :style="{ width: `${croppaOpts.width}px`}">
+        <span>
+          ({{ IMAGE_MAX_WIDTH }}px * {{ IMAGE_MAX_HEIGHT }}px / {{ croppaOpts.fileSizeLimit / 1024 / 1024 }}MB미만)
+        </span>
       </div>
 
-      <div v-show="isImageUploaded"
-           class="image-control-group-container">
-        <div class="image-resize-control-container">
-          <input type="range"
-                 step="0.01"
-                 v-model="zoomSliderValue"
-                 :min="zoomSliderMin"
-                 :max="zoomSliderMax">
+      <div class="my-croppa-container">
+        <croppa v-model="myCroppa"
+                :width="croppaOpts.width"
+                :height="croppaOpts.height"
+                :accept="croppaOpts.fileTypes"
+                :file-size-limit="croppaOpts.fileSizeLimit"
+                :remove-button-size="croppaOpts.removeButtonSize"
+                :initial-size="croppaOpts.initialImageSize"
+                :show-loading="croppaOpts.showLoading"
+                :disable-click-to-choose="croppaOpts.disableClickToChoose"
+                placeholder=""
+                @file-size-exceed="onFileSizeExceeded"
+                @new-image-drawn="onImageChosen"
+                @image-remove="onImageRemoved"
+                @zoom="onZoomed">
+        </croppa>
+      </div>
+
+      <div class="button-group-container">
+        <div v-show="!isImageUploaded"
+            class="button-group">
+          <button v-stream:click="chooseTarget$">
+            Choose Image
+          </button>
         </div>
 
-        <div class="button-group">
-          <button v-stream:click="zoomIn$">
-            Zoom In
-          </button>
-          <button v-stream:click="zoomOut$">
-            Zoom Out
-          </button>
-          <button v-stream:click="cancelUpload$">
-            Cancel
-          </button>
-          <button v-stream:click="uploadImage$">
-            Upload
-          </button>
+        <div v-show="isImageUploaded"
+            class="image-control-group-container">
+          <div class="image-resize-control-container">
+            <input type="range"
+                  step="0.01"
+                  v-model="zoomSliderValue"
+                  :min="zoomSliderMin"
+                  :max="zoomSliderMax">
+          </div>
+
+          <div class="button-group">
+            <button v-stream:click="zoomIn$">
+              Zoom In
+            </button>
+            <button v-stream:click="zoomOut$">
+              Zoom Out
+            </button>
+            <button v-stream:click="cancelUpload$">
+              Cancel
+            </button>
+            <button v-stream:click="uploadImage$">
+              Upload
+            </button>
+          </div>
         </div>
       </div>
 
-    </div>
-
-    <div class="image-container">
-      <img class="output" :src="imgUrl">
+      <div class="image-container">
+        <img class="output" :src="imgUrl">
+      </div>
     </div>
   </div>
 </template>
@@ -74,13 +86,15 @@ import 'vue-croppa/dist/vue-croppa.css';
 import _ from 'lodash';
 import { Subject } from 'rxjs';
 import { map, pluck } from 'rxjs/operators';
+import axios from 'axios';
+import appConfig from '../../config/index';
 
 Vue.use(Croppa);
 
 const IMAGE_MAX_WIDTH = 150;
 const IMAGE_MAX_HEIGHT = 150;
 
-function isClickEvent(mouseEvent: Object) {
+function isClickEvent(mouseEvent: Object): boolean {
   return _.get(mouseEvent, 'event.type') === 'click'
 }
 
@@ -97,6 +111,10 @@ export default Vue.extend({
         showLoading: true,
         disableClickToChoose: true
       },
+      oAuthInfo: _.get(appConfig, 'oAuthInfo', {}),
+      codeBaseUrl: _.get(appConfig, 'codeBaseUrl'),
+      tokenBaseUrl: _.get(appConfig, 'tokenBaseUrl'),
+      uploadBaseUrl: _.get(appConfig, 'uploadBaseUrl'),
       IMAGE_MAX_WIDTH,
       IMAGE_MAX_HEIGHT,
       myCroppa: null,
@@ -105,11 +123,19 @@ export default Vue.extend({
       zoomSliderMin: 0,
       zoomSliderMax: 0,
       isImageUploaded: false,
+      authorizationCode: '',
+      accessToken: '',
       chooseTarget$: new Subject(),
       zoomIn$: new Subject(),
       zoomOut$: new Subject(),
       cancelUpload$: new Subject(),
       uploadImage$: new Subject(),
+      exchangeAccessToken$: new Subject()
+    }
+  },
+  computed: {
+    codeUrl(): string {
+      return `${this.codeBaseUrl}?access_type=offline&scope=${this.oAuthInfo.scopes}&response_type=code&client_id=${this.oAuthInfo.clientId}&redirect_uri=${this.oAuthInfo.redirectUri}`;
     }
   },
   methods: {
@@ -141,7 +167,7 @@ export default Vue.extend({
       this.zoomSliderMin = 0;
       this.zoomSliderMax = 0;
     },
-    onImageChosen() {
+    onImageChosen(): void {
       let imageInfo = _.get(this.myCroppa, 'imgData');
       let scaleRatio = _.get(this.myCroppa, 'scaleRatio');
 
@@ -224,8 +250,27 @@ export default Vue.extend({
           if (isClickEvent(event)) {
             let url = this.$data.myCroppa.generateDataUrl();
 
-            this.$data.myCroppa.remove();
-            this.$data.isImageUploaded = false;
+            this.$data.myCroppa.generateBlob((blob: any) => {
+              const baseURI = _.get(this.$data, 'uploadBaseUrl');
+              const accessToken = _.get(this.$data, 'accessToken');
+
+              axios({
+                method: 'post',
+                url:baseURI,
+                data: blob,
+                headers: {
+                  'Content-Type': blob.type,
+                  Authorization: accessToken
+                }
+              }).then((result) => {
+                alert('Successfully uploaded on the Google dirve');
+                this.$data.myCroppa.remove();
+              }).catch((err) => {
+                alert('Failed to upload the image on the Google dirve');
+                _.set(this.$data, 'accessToken', null);
+                this.$data.myCroppa.remove();
+              })
+            });
 
             if (!url) {
               return;
@@ -240,6 +285,36 @@ export default Vue.extend({
         map(newZoomSliderValue => {
           _.set(this.$data.myCroppa, 'scaleRatio', +newZoomSliderValue);
         })
+      ),
+      exchangeAccessToken: this.$data.exchangeAccessToken$.pipe(
+        map(event => {
+          if (isClickEvent(event)) {
+            const code = _.get(this.$data, 'authorizationCode');
+            const clientId = _.get(this.$data, 'oAuthInfo.clientId');
+            const clientSecret = _.get(this.$data, 'oAuthInfo.clientSecret');
+            const grnatType = _.get(this.$data, 'oAuthInfo.grnatType');
+            const redirectUri = _.get(this.$data, 'oAuthInfo.redirectUri');
+            const baseURI = `${_.get(this.$data, 'tokenBaseUrl')}??access_type=offline&grant_type=${grnatType}&code=${code}&client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}`;
+
+            if (_.isUndefined(code)) {
+              return;
+            }
+
+            axios({
+              method: 'post',
+              url: baseURI,
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              }
+            }).then(response => {
+              _.set(this.$data, 'authorizationCode', '');
+              _.set(this.$data, 'accessToken', `${_.get(response, 'data.token_type')} ${_.get(response, 'data.access_token')}`);
+            }).catch(err => {
+              alert('Failed to get OAuth2 access token');
+              console.error(`[exchangeAccessToken] err: ${err}`);
+            });
+          }
+        })
       )
     }
   }
@@ -248,6 +323,24 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 .main-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.google-access-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  div {
+    margin-top: 10px;
+  }
+}
+
+.image-uploader-container {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
