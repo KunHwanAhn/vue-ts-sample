@@ -31,6 +31,7 @@ shell:$ vue init webpack-simple {{ project_name }}
 ```
 
 ### 폴더 구조
+- config: Google Drive를 사용하기 위한 인증 정보가 들어 있는 Config 폴
 - src: 프로그램의 시작지점 소스코드가 들어있는 폴더
 - src/components: Single File Component가 들어있는 폴더
 
