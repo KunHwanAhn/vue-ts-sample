@@ -51,6 +51,7 @@ shell:$ vue init webpack-simple {{ project_name }}
 #### MyCroppa
 - Single File Component
 - [vue-croppa](https://github.com/zhanziyang/vue-croppa) 라이브러리를 활용하여 기능 구현
+- [Google Drive API](https://developers.google.com/drive/api/v3/manage-uploads)를 이용한 Google Drive Uploade 기능 구현
 - Handled Attributes & Events
   - accept: png, jpeg 확장자 제한
   - file-size-limit: 파일 사이즈 1MB 미만으로 제한

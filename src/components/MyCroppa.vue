@@ -38,14 +38,14 @@
       </div>
 
       <div class="button-group-container">
-        <div v-show="!isImageUploaded"
+        <div v-show="!isImageChosen"
             class="button-group">
           <button v-stream:click="chooseTarget$">
             Choose Image
           </button>
         </div>
 
-        <div v-show="isImageUploaded"
+        <div v-show="isImageChosen"
             class="image-control-group-container">
           <div class="image-resize-control-container">
             <input type="range"
@@ -73,6 +73,9 @@
       </div>
 
       <div class="image-container">
+        <div v-show="isImageChosen && isImageUploading"
+             class="loader">
+        </div>
         <img class="output" :src="imgUrl">
       </div>
     </div>
@@ -122,7 +125,8 @@ export default Vue.extend({
       zoomSliderValue: 0,
       zoomSliderMin: 0,
       zoomSliderMax: 0,
-      isImageUploaded: false,
+      isImageChosen: false,
+      isImageUploading: false,
       authorizationCode: '',
       accessToken: '',
       chooseTarget$: new Subject(),
@@ -162,7 +166,7 @@ export default Vue.extend({
       this.zoomSliderValue = +scaleRatio;
     },
     onImageRemoved(): void {
-      this.isImageUploaded = false;
+      this.isImageChosen = false;
       this.zoomSliderValue = 0;
       this.zoomSliderMin = 0;
       this.zoomSliderMax = 0;
@@ -192,7 +196,8 @@ export default Vue.extend({
         return;
       }
 
-      this.isImageUploaded = true;
+      this.imgUrl = '';
+      this.isImageChosen = true;
       this.zoomSliderValue = +scaleRatio;
       this.zoomSliderMin = +scaleRatio / 2;
       this.zoomSliderMax = +scaleRatio * 4;
@@ -241,7 +246,7 @@ export default Vue.extend({
         map(event => {
           if (isClickEvent(event)) {
             this.$data.myCroppa.remove();
-            this.$data.isImageUploaded = false;
+            this.$data.isImageChosen = false;
           }
         })
       ),
@@ -249,6 +254,7 @@ export default Vue.extend({
         map(event => {
           if (isClickEvent(event)) {
             let url = this.$data.myCroppa.generateDataUrl();
+            _.set(this.$data, 'isImageUploading', true);
 
             this.$data.myCroppa.generateBlob((blob: any) => {
               const baseURI = _.get(this.$data, 'uploadBaseUrl');
@@ -263,20 +269,19 @@ export default Vue.extend({
                   Authorization: accessToken
                 }
               }).then((result) => {
+                _.set(this.$data, 'isImageUploading', false);
                 alert('Successfully uploaded on the Google dirve');
                 this.$data.myCroppa.remove();
+                _.set(this.$data, 'imgUrl', url || '');
+
               }).catch((err) => {
+                _.set(this.$data, 'isImageUploading', false);
                 alert('Failed to upload the image on the Google dirve');
                 _.set(this.$data, 'accessToken', null);
+                _.set(this.$data, 'imgUrl', '');
                 this.$data.myCroppa.remove();
               })
             });
-
-            if (!url) {
-              return;
-            }
-
-            this.$data.imgUrl = url;
           }
         })
       ),
@@ -408,5 +413,19 @@ export default Vue.extend({
   img {
     max-width: 50%;
   }
+}
+
+.loader {
+    border: 16px solid #f3f3f3; /* Light grey */
+    border-top: 16px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>
